@@ -1,28 +1,18 @@
 import "@/global.css";
-import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
-import { useEffect } from "react";
+import { useAuth } from "@clerk/expo";
+import { Redirect, Stack } from "expo-router";
 
-SplashScreen.preventAutoHideAsync();
-export default function RootLayout() {
-  const [fontsLoaded] = useFonts({
-    "sans-regular": require("../../assets/fonts/PlusJakartaSans-Regular.ttf"),
-    "sans-bold": require("../../assets/fonts/PlusJakartaSans-Bold.ttf"),
-    "sans-medium": require("../../assets/fonts/PlusJakartaSans-Medium.ttf"),
-    "sans-semibold": require("../../assets/fonts/PlusJakartaSans-SemiBold.ttf"),
-    "sans-extrabold": require("../../assets/fonts/PlusJakartaSans-ExtraBold.ttf"),
-    "sans-light": require("../../assets/fonts/PlusJakartaSans-Light.ttf"),
-  });
+export default function AuthLayout() {
+  const { isSignedIn, isLoaded } = useAuth();
 
-  useEffect(() => {
-    if (fontsLoaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded]);
-
-  if (!fontsLoaded) {
+  // Wait for auth to load before rendering anything
+  if (!isLoaded) {
     return null;
+  }
+
+  // Redirect to home if user is already signed in
+  if (isSignedIn) {
+    return <Redirect href="/(tabs)" />;
   }
 
   return <Stack screenOptions={{ headerShown: false }} />;
