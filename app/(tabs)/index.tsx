@@ -14,6 +14,7 @@ import { formatCurrency } from "@/lib/utils";
 import dayjs from "dayjs";
 import { styled } from "nativewind";
 import { useState } from "react";
+import { posthog } from "@/lib/posthog";
 import { FlatList, Image, Text, View } from "react-native";
 import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
 const SafeAreaView = styled(RNSafeAreaView);
@@ -75,11 +76,14 @@ export default function App() {
           <SubscriptionCard
             {...item}
             expanded={expandedSubscriptionId === item.id}
-            onPress={() =>
-              setExpandedSubscriptionId((currentId) =>
-                currentId === item.id ? null : item.id,
-              )
-            }
+            onPress={() => {
+              const isExpanded = expandedSubscriptionId !== item.id;
+              posthog?.capture("subscription_details_toggled", {
+                subscription_id: item.id,
+                is_expanded: isExpanded,
+              });
+              setExpandedSubscriptionId(isExpanded ? item.id : null);
+            }}
           />
         )}
         extraData={expandedSubscriptionId}
