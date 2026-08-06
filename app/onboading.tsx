@@ -1,4 +1,3 @@
-
 const Onboading = () => {
   // return (
   // <View>
