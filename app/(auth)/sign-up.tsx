@@ -73,11 +73,13 @@ const SignUp = () => {
             return;
           }
 
-          posthog.identify(emailAddress, {
+          if (!session?.user?.id) return;
+
+          posthog.identify(session.user.id, {
             $set: { email: emailAddress },
             $set_once: { sign_up_date: new Date().toISOString() },
           });
-          posthog.capture("user_signed_up", { email: emailAddress });
+          posthog.capture("user_signed_up");
 
           const url = decorateUrl("/(tabs)");
           if (url.startsWith("http")) {
