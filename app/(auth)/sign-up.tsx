@@ -1,5 +1,6 @@
 import { useAuth, useSignUp } from "@clerk/expo";
 import { Link, useRouter, type Href } from "expo-router";
+import { parseClerkApiError } from "@/lib/clerk-errors";
 import { styled } from "nativewind";
 import { usePostHog } from "posthog-react-native";
 import { useState } from "react";
@@ -29,6 +30,20 @@ const SignUp = () => {
   // Validation states
   const [emailTouched, setEmailTouched] = useState(false);
   const [passwordTouched, setPasswordTouched] = useState(false);
+  const [apiFieldErrors, setApiFieldErrors] = useState<Record<string, string>>(
+    {},
+  );
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const clearApiErrors = () => {
+    setApiFieldErrors({});
+    setFormError(null);
+  };
+
+  const emailError =
+    errors.fields.emailAddress?.message ?? apiFieldErrors.emailAddress;
+  const passwordError =
+    errors.fields.password?.message ?? apiFieldErrors.password;
 
   // Client-side validation
   const emailValid =
@@ -41,23 +56,27 @@ const SignUp = () => {
   const handleSubmit = async () => {
     if (!formValid) return;
 
+    clearApiErrors();
+
     const { error } = await signUp.password({
       emailAddress,
       password,
     });
 
     if (error) {
-      console.error(JSON.stringify(error, null, 2));
+      const parsed = parseClerkApiError(error);
+      setApiFieldErrors(parsed.fieldErrors);
+      setFormError(parsed.formError);
+      setEmailTouched(true);
+      setPasswordTouched(true);
       posthog.capture("user_sign_up_failed", {
-        error_message: error.message,
+        error_code: error.errors?.[0]?.code,
+        error_message: parsed.formError,
       });
       return;
     }
 
-    // Send verification email
-    if (!error) {
-      await signUp.verifications.sendEmailCode();
-    }
+    await signUp.verifications.sendEmailCode();
   };
 
   const handleVerify = async () => {
@@ -223,15 +242,24 @@ const SignUp = () => {
             {/* Sign-Up Form */}
             <View className="auth-card">
               <View className="auth-form">
+                {formError && !emailError && !passwordError && (
+                  <View className="auth-form-error">
+                    <Text className="auth-form-error-text">{formError}</Text>
+                  </View>
+                )}
+
                 <View className="auth-field">
                   <Text className="auth-label">Email Address</Text>
                   <TextInput
-                    className={`auth-input ${emailTouched && !emailValid && "auth-input-error"}`}
+                    className={`auth-input ${(emailTouched && !emailValid) || emailError ? "auth-input-error" : ""}`}
                     autoCapitalize="none"
                     value={emailAddress}
                     placeholder="name@example.com"
                     placeholderTextColor="rgba(0, 0, 0, 0.4)"
-                    onChangeText={setEmailAddress}
+                    onChangeText={(value) => {
+                      setEmailAddress(value);
+                      clearApiErrors();
+                    }}
                     onBlur={() => setEmailTouched(true)}
                     keyboardType="email-address"
                     autoComplete="email"
@@ -241,22 +269,23 @@ const SignUp = () => {
                       Please enter a valid email address
                     </Text>
                   )}
-                  {errors.fields.emailAddress && (
-                    <Text className="auth-error">
-                      {errors.fields.emailAddress.message}
-                    </Text>
+                  {emailError && (
+                    <Text className="auth-error">{emailError}</Text>
                   )}
                 </View>
 
                 <View className="auth-field">
                   <Text className="auth-label">Password</Text>
                   <TextInput
-                    className={`auth-input ${passwordTouched && !passwordValid && "auth-input-error"}`}
+                    className={`auth-input ${(passwordTouched && !passwordValid) || passwordError ? "auth-input-error" : ""}`}
                     value={password}
                     placeholder="Create a strong password"
                     placeholderTextColor="rgba(0, 0, 0, 0.4)"
                     secureTextEntry
-                    onChangeText={setPassword}
+                    onChangeText={(value) => {
+                      setPassword(value);
+                      clearApiErrors();
+                    }}
                     onBlur={() => setPasswordTouched(true)}
                     autoComplete="password-new"
                   />
@@ -265,14 +294,13 @@ const SignUp = () => {
                       Password must be at least 8 characters
                     </Text>
                   )}
-                  {errors.fields.password && (
-                    <Text className="auth-error">
-                      {errors.fields.password.message}
-                    </Text>
+                  {passwordError && (
+                    <Text className="auth-error">{passwordError}</Text>
                   )}
-                  {!passwordTouched && (
+                  {!passwordTouched && !passwordError && (
                     <Text className="auth-helper">
-                      Minimum 8 characters required
+                      Use at least 8 characters with a mix of letters, numbers,
+                      and symbols
                     </Text>
                   )}
                 </View>
