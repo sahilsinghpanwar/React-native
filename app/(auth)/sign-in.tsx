@@ -61,11 +61,13 @@ const SignIn = () => {
             return;
           }
 
-          posthog.identify(emailAddress, {
+          if (!session?.user?.id) return;
+
+          posthog.identify(session.user.id, {
             $set: { email: emailAddress },
             $set_once: { first_sign_in_date: new Date().toISOString() },
           });
-          posthog.capture("user_signed_in", { email: emailAddress });
+          posthog.capture("user_signed_in");
 
           const url = decorateUrl("/(tabs)");
           if (url.startsWith("http")) {
@@ -109,12 +111,13 @@ const SignIn = () => {
             return;
           }
 
-          // Track successful sign-in after verification
-          posthog.identify(emailAddress, {
+          if (!session?.user?.id) return;
+
+          posthog.identify(session.user.id, {
             $set: { email: emailAddress },
             $set_once: { first_sign_in_date: new Date().toISOString() },
           });
-          posthog.capture("user_signed_in", { email: emailAddress });
+          posthog.capture("user_signed_in");
 
           const url = decorateUrl("/(tabs)");
           if (url.startsWith("http")) {
@@ -320,7 +323,7 @@ const SignIn = () => {
 
             {/* Sign-Up Link */}
             <View className="auth-link-row">
-              <Text className="auth-link-copy">Don't have an account?</Text>
+              <Text className="auth-link-copy">Don&apos;t have an account?</Text>
               <Link href="/(auth)/sign-up" asChild>
                 <Pressable>
                   <Text className="auth-link">Create Account</Text>

@@ -4,8 +4,10 @@ import { tokenCache } from "@clerk/expo/token-cache";
 import { useFonts } from "expo-font";
 import { Slot, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect } from "react";
-import { LogBox } from "react-native";
+import { PostHogErrorBoundary, PostHogProvider } from "posthog-react-native";
+import { useEffect, type ReactNode } from "react";
+import { LogBox, StyleSheet, Text, View } from "react-native";
+import { posthog } from "@/lib/posthog";
 LogBox.ignoreLogs(["Clerk: Clerk has been loaded with development keys"]);
 
 SplashScreen.preventAutoHideAsync();
@@ -17,6 +19,29 @@ if (!publishableKey) {
 }
 
 // ─── Auth redirect guard ────────────────────────────────────────────────────
+function ErrorFallback() {
+  return (
+    <View style={styles.errorContainer}>
+      <Text style={styles.errorTitle}>Something went wrong</Text>
+      <Text style={styles.errorMessage}>Please restart the app and try again.</Text>
+    </View>
+  );
+}
+
+function PostHogBoundary({ children }: { children: ReactNode }) {
+  if (!posthog) {
+    return <>{children}</>;
+  }
+
+  return (
+    <PostHogProvider client={posthog}>
+      <PostHogErrorBoundary fallback={ErrorFallback}>
+        {children}
+      </PostHogErrorBoundary>
+    </PostHogProvider>
+  );
+}
+
 function AuthGuard() {
   const { isLoaded, isSignedIn } = useAuth();
   const segments = useSegments();
@@ -34,12 +59,29 @@ function AuthGuard() {
       // Signed-out users must authenticate first
       router.replace("/(auth)/sign-in");
     }
-  }, [isLoaded, isSignedIn, segments]);
+  }, [isLoaded, isSignedIn, router, segments]);
 
   return <Slot />;
 }
 
 // ─── Root layout ─────────────────────────────────────────────────────────────
+const styles = StyleSheet.create({
+  errorContainer: {
+    alignItems: "center",
+    flex: 1,
+    justifyContent: "center",
+    padding: 24,
+  },
+  errorMessage: {
+    marginTop: 8,
+    textAlign: "center",
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+  },
+});
+
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     "sans-regular": require("../assets/fonts/PlusJakartaSans-Regular.ttf"),
@@ -60,9 +102,11 @@ export default function RootLayout() {
 
   return (
     <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-      <ClerkLoaded>
-        <AuthGuard />
-      </ClerkLoaded>
+      <PostHogBoundary>
+        <ClerkLoaded>
+          <AuthGuard />
+        </ClerkLoaded>
+      </PostHogBoundary>
     </ClerkProvider>
   );
 }

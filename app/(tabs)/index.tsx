@@ -13,15 +13,34 @@ import "@/global.css";
 import { formatCurrency } from "@/lib/utils";
 import dayjs from "dayjs";
 import { styled } from "nativewind";
+import { usePostHog } from "posthog-react-native";
 import { useState } from "react";
 import { FlatList, Image, Text, View } from "react-native";
 import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
 const SafeAreaView = styled(RNSafeAreaView);
 
 export default function App() {
+  const posthog = usePostHog();
   const [expandedSubscriptionId, setExpandedSubscriptionId] = useState<
     string | null
   >(null);
+
+  const handleSubscriptionPress = (
+    subscription: (typeof HOME_SUBSCRIPTIONS)[number],
+  ) => {
+    setExpandedSubscriptionId((currentId) => {
+      if (currentId !== subscription.id) {
+        posthog.capture("subscription_details_viewed", {
+          category: subscription.category!,
+          billing_interval: subscription.billing,
+          status: subscription.status!,
+        });
+      }
+
+      return currentId === subscription.id ? null : subscription.id;
+    });
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-background p-5">
       <FlatList
@@ -75,11 +94,7 @@ export default function App() {
           <SubscriptionCard
             {...item}
             expanded={expandedSubscriptionId === item.id}
-            onPress={() =>
-              setExpandedSubscriptionId((currentId) =>
-                currentId === item.id ? null : item.id,
-              )
-            }
+            onPress={() => handleSubscriptionPress(item)}
           />
         )}
         extraData={expandedSubscriptionId}
