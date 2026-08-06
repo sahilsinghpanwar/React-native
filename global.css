@@ -309,6 +309,14 @@
     @apply text-xs font-sans-medium text-destructive;
   }
 
+  .auth-form-error {
+    @apply rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3;
+  }
+
+  .auth-form-error-text {
+    @apply text-sm font-sans-medium text-destructive;
+  }
+
   .auth-helper {
     @apply text-sm font-sans-medium text-muted-foreground;
   }

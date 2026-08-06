@@ -4,6 +4,7 @@ import { tokenCache } from "@clerk/expo/token-cache";
 import { useFonts } from "expo-font";
 import { Slot, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import { PostHogProvider } from "posthog-react-native";
 import { useEffect } from "react";
 import { LogBox } from "react-native";
 LogBox.ignoreLogs(["Clerk: Clerk has been loaded with development keys"]);
@@ -11,9 +12,17 @@ LogBox.ignoreLogs(["Clerk: Clerk has been loaded with development keys"]);
 SplashScreen.preventAutoHideAsync();
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
+const posthogApiKey = process.env.EXPO_PUBLIC_POSTHOG_PROJECT_TOKEN!;
+const posthogHost = process.env.EXPO_PUBLIC_POSTHOG_HOST!;
 
 if (!publishableKey) {
   throw new Error("Add EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY to your .env file");
+}
+
+if (!posthogApiKey || !posthogHost) {
+  throw new Error(
+    "Add EXPO_PUBLIC_POSTHOG_PROJECT_TOKEN and EXPO_PUBLIC_POSTHOG_HOST to your .env file",
+  );
 }
 
 // ─── Auth redirect guard ────────────────────────────────────────────────────
@@ -59,10 +68,12 @@ export default function RootLayout() {
   if (!fontsLoaded) return null;
 
   return (
-    <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-      <ClerkLoaded>
-        <AuthGuard />
-      </ClerkLoaded>
-    </ClerkProvider>
+    <PostHogProvider apiKey={posthogApiKey} options={{ host: posthogHost }}>
+      <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+        <ClerkLoaded>
+          <AuthGuard />
+        </ClerkLoaded>
+      </ClerkProvider>
+    </PostHogProvider>
   );
 }
