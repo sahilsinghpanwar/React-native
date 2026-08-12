@@ -1,55 +1,53 @@
 import "@/global.css";
-import { ClerkLoaded, ClerkProvider, useAuth } from "@clerk/expo";
+import { ClerkProvider, useAuth } from "@clerk/expo";
 import { tokenCache } from "@clerk/expo/token-cache";
 import { useFonts } from "expo-font";
-import { Slot, useRouter, useSegments } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
+import {
+  SplashScreen,
+  Stack,
+  useGlobalSearchParams,
+  usePathname,
+} from "expo-router";
 import { PostHogProvider } from "posthog-react-native";
-import { useEffect } from "react";
-import { LogBox } from "react-native";
-LogBox.ignoreLogs(["Clerk: Clerk has been loaded with development keys"]);
+import { useEffect, useRef } from "react";
+import { posthog } from "../src/config/posthog";
 
 SplashScreen.preventAutoHideAsync();
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
-const posthogApiKey = process.env.EXPO_PUBLIC_POSTHOG_PROJECT_TOKEN!;
-const posthogHost = process.env.EXPO_PUBLIC_POSTHOG_HOST!;
 
 if (!publishableKey) {
-  throw new Error("Add EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY to your .env file");
+  throw new Error("Add your Clerk Publishable Key to the .env file");
 }
 
-if (!posthogApiKey || !posthogHost) {
-  throw new Error(
-    "Add EXPO_PUBLIC_POSTHOG_PROJECT_TOKEN and EXPO_PUBLIC_POSTHOG_HOST to your .env file",
-  );
-}
-
-// ─── Auth redirect guard ────────────────────────────────────────────────────
-function AuthGuard() {
-  const { isLoaded, isSignedIn } = useAuth();
-  const segments = useSegments();
-  const router = useRouter();
+function RootLayoutContent() {
+  const { isLoaded: authLoaded } = useAuth();
+  const pathname = usePathname();
+  const params = useGlobalSearchParams();
+  const previousPathname = useRef<string | undefined>(undefined);
 
   useEffect(() => {
-    if (!isLoaded) return;
+    if (previousPathname.current !== pathname) {
+      // Filter route params to avoid leaking sensitive data
+      const sanitizedParams = Object.keys(params).reduce(
+        (acc, key) => {
+          // Only include specific safe params
+          if (["id", "tab", "view"].includes(key)) {
+            acc[key] = params[key];
+          }
+          return acc;
+        },
+        {} as Record<string, string | string[]>,
+      );
 
-    const inAuthGroup = segments[0] === "(auth)";
-
-    if (isSignedIn && inAuthGroup) {
-      // Signed-in users shouldn't be on auth screens
-      router.replace("/(tabs)");
-    } else if (!isSignedIn && !inAuthGroup) {
-      // Signed-out users must authenticate first
-      router.replace("/(auth)/sign-in");
+      posthog.screen(pathname, {
+        previous_screen: previousPathname.current ?? null,
+        ...sanitizedParams,
+      });
+      previousPathname.current = pathname;
     }
-  }, [isLoaded, isSignedIn, segments]);
+  }, [pathname, params]);
 
-  return <Slot />;
-}
-
-// ─── Root layout ─────────────────────────────────────────────────────────────
-export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     "sans-regular": require("../assets/fonts/PlusJakartaSans-Regular.ttf"),
     "sans-bold": require("../assets/fonts/PlusJakartaSans-Bold.ttf"),
@@ -60,19 +58,30 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (fontsLoaded) {
+    // Hide splash only when both fonts and auth are loaded
+    if (fontsLoaded && authLoaded) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded]);
+  }, [fontsLoaded, authLoaded]);
 
-  if (!fontsLoaded) return null;
+  // Don't render app until both are ready
+  if (!fontsLoaded || !authLoaded) return null;
 
+  return <Stack screenOptions={{ headerShown: false }} />;
+}
+
+export default function RootLayout() {
   return (
-    <PostHogProvider apiKey={posthogApiKey} options={{ host: posthogHost }}>
+    <PostHogProvider
+      client={posthog}
+      autocapture={{
+        captureScreens: false,
+        captureTouches: true,
+        propsToCapture: ["testID"],
+      }}
+    >
       <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-        <ClerkLoaded>
-          <AuthGuard />
-        </ClerkLoaded>
+        <RootLayoutContent />
       </ClerkProvider>
     </PostHogProvider>
   );
