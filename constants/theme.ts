@@ -1,15 +1,15 @@
 export const colors = {
-  background: "#fff9e3",
-  foreground: "#081126",
-  card: "#fff8e7",
-  muted: "#f6eecf",
-  mutedForeground: "rgba(0, 0, 0, 0.6)",
-  primary: "#081126",
-  accent: "#ea7a53",
-  border: "rgba(0, 0, 0, 0.1)",
-  success: "#16a34a",
-  destructive: "#dc2626",
-  subscription: "#8fd1bd",
+  background: "#09090B",
+  foreground: "#F8FAFC",
+  card: "#141417",
+  muted: "#202025",
+  mutedForeground: "rgba(248, 250, 252, 0.55)",
+  primary: "#18181B",
+  accent: "#6366F1",
+  border: "rgba(255, 255, 255, 0.1)",
+  success: "#10B981",
+  destructive: "#FF4757",
+  subscription: "#1E1B4B",
 } as const;
 
 export const spacing = {

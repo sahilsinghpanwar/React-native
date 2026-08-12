@@ -1,9 +1,11 @@
-const Onboading = () => {
-  // return (
-  // <View>
-  //   <Text>Onboading</Text>
-  // </View>
-  // );
+import { Text, View } from "react-native";
+
+const Onboarding = () => {
+  return (
+    <View>
+      <Text>Onboarding</Text>
+    </View>
+  );
 };
 
-export default Onboading;
+export default Onboarding;

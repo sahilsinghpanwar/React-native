@@ -1,7 +1,7 @@
 import {
-    formatCurrency,
-    formatStatusLabel,
-    formatSubscriptionDateTime,
+  formatCurrency,
+  formatStatusLabel,
+  formatSubscriptionDateTime,
 } from "@/lib/utils";
 import clsx from "clsx";
 import React from "react";
@@ -27,11 +27,23 @@ const SubscriptionCard = ({
     <Pressable
       onPress={onPress}
       className={clsx("sub-card", expanded ? "sub-card-expanded" : "bg-card")}
-      style={!expanded && color ? { backgroundColor: color } : undefined}
+      style={
+        color
+          ? {
+              backgroundColor: expanded ? undefined : color + "12",
+              borderColor: color + "35",
+            }
+          : undefined
+      }
     >
       <View className="sub-head">
         <View className="sub-main">
-          <Image source={icon} className="sub-icon" />
+          <Image
+            source={icon}
+            className="sub-icon"
+            resizeMode="contain"
+            style={color ? { tintColor: color } : undefined}
+          />
           <View className="sub-copy">
             <Text numberOfLines={1} className="sub-title">
               {name}

@@ -5,17 +5,17 @@
 @import "nativewind/theme";
 
 @theme {
-  --color-background: #fff9e3;
-  --color-foreground: #081126;
-  --color-card: #fff8e7;
-  --color-muted: #f6eecf;
-  --color-muted-foreground: rgba(0, 0, 0, 0.6);
-  --color-primary: #081126;
-  --color-accent: #ea7a53;
-  --color-border: rgba(0, 0, 0, 0.1);
-  --color-success: #16a34a;
-  --color-destructive: #dc2626;
-  --color-subscription: #8fd1bd;
+  --color-background: #09090B;
+  --color-foreground: #F8FAFC;
+  --color-card: #141417;
+  --color-muted: #202025;
+  --color-muted-foreground: rgba(248, 250, 252, 0.55);
+  --color-primary: #F8FAFC;
+  --color-accent: #6366F1;
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-success: #10B981;
+  --color-destructive: #FF4757;
+  --color-subscription: #1E1B4B;
 
   --font-sans: "sans-regular";
   --font-sans-light: "sans-light";
@@ -118,7 +118,7 @@
   }
 
   .list-action {
-    @apply rounded-full border border-black/20 px-4 py-1;
+    @apply rounded-full border border-border px-4 py-1;
   }
 
   .list-action-text {
@@ -126,7 +126,7 @@
   }
 
   .upcoming-card {
-    @apply mr-4 w-44 rounded-2xl border border-black/10 bg-background p-4;
+    @apply mr-4 w-44 rounded-2xl border border-border bg-card p-4;
   }
 
   .upcoming-row {
@@ -230,7 +230,7 @@
   }
 
   .home-empty-state {
-    @apply py-4 text-sm font-sans-medium text-black/60;
+    @apply py-4 text-sm font-sans-medium text-muted-foreground;
   }
 
   .auth-safe-area {
